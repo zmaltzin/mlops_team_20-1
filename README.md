@@ -6,6 +6,12 @@
 
 Este repositorio contiene un proyecto de MLOps que implementa un pipeline completo de Machine Learning, desde la gestión y preprocesamiento de datos hasta el despliegue y automatización de modelos. Sigue los principios de MLOps para garantizar la reproducibilidad, escalabilidad y mantenimiento en producción.
 
+Se esta usando el dataset Turkish Music Emotion el cual contiene canciones turcas etiquetadas con diferentes emociones (alegría, tristeza, ira, etc.). Generalmente incluye características como el tempo, la tonalidad, el ritmo, y otras características acústicas.
+
+
+Referencia:<br> 
+Bilal Er, M., & Aydilek, I. B. (2019). Music emotion recognition by using chroma spectrogram and deep visual features. Journal of Computational Intelligent Systems, 12(2), 1622â€“1634. International Journal of Computational Intelligence Systems, , DOI: https://doi.org/10.2991/ijcis.d.191216.001
+
 ## Project Organization
 
 ```

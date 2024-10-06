@@ -2,7 +2,7 @@ services:
   db:
     restart: always
     image: postgres
-    container_name: mlflow_db
+    container_name: db
     expose:
       - "${PG_PORT}"
     networks:
@@ -22,7 +22,7 @@ services:
   s3:
     restart: always
     image: minio/minio
-    container_name: mlflow_minio
+    container_name: minio
     volumes:
       - minio_data:/data
     ports:
@@ -47,7 +47,7 @@ services:
 
   create_buckets:
     image: minio/mc
-    container_name: mlflow_create_buckets
+    container_name: create_buckets
     depends_on:
       - s3
     networks:

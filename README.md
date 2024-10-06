@@ -1,4 +1,4 @@
-# MLOps_team_20
+# MLOps Team 20 - Turkish Music Emotion
 
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
@@ -45,9 +45,9 @@ Bilal Er, M., & Aydilek, I. B. (2019). Music emotion recognition by using chroma
 │
 ├── setup.cfg          <- Configuration file for flake8
 │
-└── mlops   <- Source code for use in this project.
+└── turkish_music_emotion   <- Source code for use in this project.
     │
-    ├── __init__.py             <- Makes mlops a Python module
+    ├── __init__.py             <- Makes turkish_music_emotion a Python module
     │
     ├── config.py               <- Store useful variables and configuration
     │

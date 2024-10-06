@@ -1,5 +1,8 @@
 [core]
-    remote = azure_remote
+    remote = google_remote
 ['remote "azure_remote"']
     url = azure://container
     account_name = datosproyectoequipo20
+['remote "google_remote"']
+    url = gs://data_proyecto_mlops_equipo_20
+    credentialpath = /Users/larguelles/Downloads/mlops-equipo-20-443b640b95ff.json

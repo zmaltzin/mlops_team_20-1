@@ -5,5 +5,6 @@ db_data/*
 minio_data/*
 !minio_data/.gitkeep
 
+.env
 
 +!.gitkeep

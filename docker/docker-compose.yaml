@@ -1,103 +1,67 @@
-version: "3.3"
-
 services:
-  db:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
     restart: always
-    image: postgres
-    container_name: mlflow_db
-    expose:
-      - "${PG_PORT}"
-    networks:
-      - backend
-    environment:
-      - POSTGRES_USER=${PG_USER}
-      - POSTGRES_PASSWORD=${PG_PASSWORD}
-      - POSTGRES_DB=${PG_DATABASE}
-    volumes:
-      - ../data/db:/var/lib/postgresql/data/
-    healthcheck:
-      test: ["CMD", "pg_isready", "-p", "${PG_PORT}", "-U", "${PG_USER}"]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-  
-  s3:
-    restart: always
-    image: minio/minio
-    container_name: mlflow_minio
-    volumes:
-      - ../data/minio:/data
     ports:
-      - "${MINIO_PORT}:9000"
-      - "${MINIO_CONSOLE_PORT}:9001"
-    networks:
-      - frontend
-      - backend
+      - "5432:5432"
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_ADDRESS=${MINIO_ADDRESS}
-      - MINIO_PORT=${MINIO_PORT}
-      - MINIO_STORAGE_USE_HTTPS=${MINIO_STORAGE_USE_HTTPS}
-      - MINIO_CONSOLE_ADDRESS=${MINIO_CONSOLE_ADDRESS}
-    command: server /data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  create_buckets:
-    image: minio/mc
-    container_name: mlflow_create_buckets
-    depends_on:
-      - s3
-    networks:
-      - backend
-    entrypoint: >
-      /bin/sh -c '
-      sleep 5;
-      /usr/bin/mc config host add s3 http://s3:${MINIO_PORT} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_ACCESS_KEY} --api S3v4;
-      [[ ! -z "`/usr/bin/mc ls s3 | grep challenge`" ]] || /usr/bin/mc mb s3/${MLFLOW_BUCKET_NAME};
-      /usr/bin/mc policy download s3/${MLFLOW_BUCKET_NAME};
-      exit 0;
-      '
-
-  tracking_server:
+  minio:
     restart: always
-    build: ../mlflow
+    image: quay.io/minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_ACCESS_KEY}
+      - MINIO_STORAGE_USE_HTTPS=false
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  minio-setup:
+    image: quay.io/minio/mc
+    depends_on:
+      - minio
+    volumes:
+      - ./minio/create-buckets.sh:/create-buckets.sh
+    entrypoint: /bin/sh
+    command: -c "chmod +x /create-buckets.sh && /create-buckets.sh"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_ACCESS_KEY}
+
+  mlflow:
+    restart: always
+    build: ./mlflow
     image: mlflow_server
     container_name: mlflow_server
-    depends_on:
-      - db
     ports:
-      - "${MLFLOW_PORT}:5000"
-    networks:
-      - frontend
-      - backend
+      - "5000:5000"
     environment:
       - AWS_ACCESS_KEY_ID=${MINIO_ACCESS_KEY}
       - AWS_SECRET_ACCESS_KEY=${MINIO_SECRET_ACCESS_KEY}
-      - MLFLOW_S3_ENDPOINT_URL=http://s3:${MINIO_PORT}
+      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT}
       - MLFLOW_S3_IGNORE_TLS=true
     command: >
       mlflow server
-      --backend-store-uri postgresql://${PG_USER}:${PG_PASSWORD}@db:${PG_PORT}/${PG_DATABASE}
+      --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/mlflow
       --host 0.0.0.0
       --serve-artifacts
-      --artifacts-destination s3://${MLFLOW_BUCKET_NAME}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${MLFLOW_PORT}/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      --artifacts-destination s3://mlflow
+    depends_on:
+      - postgres
+      - minio-setup
 
 volumes:
-  db_data:
+  postgres_data:
   minio_data:
-
-networks:
-  frontend:
-    driver: bridge
-  backend:
-    driver: bridge

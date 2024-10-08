@@ -173,4 +173,6 @@ cython_debug/
 
 # venv
 mlops_tme_venv/
-/data
+
+# DVC
+.dvc/config
